@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MediaItemCard from '@/components/MediaItemCard';
+import QuickFilters from '@/components/QuickFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -145,12 +146,31 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Quick Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="w-5 h-5 mr-2" />
+              Quick Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuickFilters
+              onFilterSelect={handleFilterChange}
+              activeFilters={{
+                media_type: filters.media_type === 'all' ? undefined : filters.media_type,
+                status: filters.status === 'all' ? undefined : filters.status,
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Advanced Filters */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Filter className="w-5 h-5 mr-2" />
-              Filters
+              Advanced Filters
             </CardTitle>
           </CardHeader>
           <CardContent>

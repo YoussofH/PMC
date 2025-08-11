@@ -232,21 +232,37 @@ export default function Dashboard() {
                 )}
                 
                 {searchResults.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {searchResults.map((item) => (
-                      <MediaItemCard
-                        key={item.id}
-                        item={item}
-                        onStatusUpdate={handleStatusUpdate}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {searchResults.map((item) => (
+                        <MediaItemCard
+                          key={item.id}
+                          item={item}
+                          onStatusUpdate={handleStatusUpdate}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-center mt-4">
+                      <Button variant="outline" asChild>
+                        <Link href={`/search?q=${encodeURIComponent(searchQuery)}`}>
+                          View All Results & Filters
+                        </Link>
+                      </Button>
+                    </div>
+                  </>
                 )}
                 
                 {searchQuery && !isSearching && searchResults.length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No items found for "{searchQuery}"
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground mb-4">
+                      No items found for "{searchQuery}"
+                    </p>
+                    <Button variant="outline" asChild>
+                      <Link href={`/search?q=${encodeURIComponent(searchQuery)}`}>
+                        Try Advanced Search
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </div>
