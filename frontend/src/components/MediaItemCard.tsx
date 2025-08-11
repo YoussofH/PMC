@@ -5,14 +5,15 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MediaItem } from '@/lib/api';
-import { Trash2, Edit, Calendar, User } from 'lucide-react';
+import { MediaItem, aiAPI } from '@/lib/api';
+import { Trash2, Edit, Calendar, User, Sparkles } from 'lucide-react';
 
 interface MediaItemCardProps {
   item: MediaItem;
   onStatusUpdate?: (id: string, newStatus: string) => Promise<void>;
   onEdit?: (item: MediaItem) => void;
   onDelete?: (id: string) => Promise<void>;
+  onEnhance?: (id: string) => Promise<void>;
 }
 
 const statusColors: Record<string, string> = {
@@ -42,9 +43,11 @@ const MediaItemCard: React.FC<MediaItemCardProps> = ({
   onStatusUpdate,
   onEdit,
   onDelete,
+  onEnhance,
 }) => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!onStatusUpdate) return;
@@ -71,6 +74,19 @@ const MediaItemCard: React.FC<MediaItemCardProps> = ({
       } finally {
         setIsDeleting(false);
       }
+    }
+  };
+
+  const handleEnhance = async () => {
+    if (!onEnhance) return;
+    
+    setIsEnhancing(true);
+    try {
+      await onEnhance(item.id);
+    } catch (error) {
+      console.error('Failed to enhance item:', error);
+    } finally {
+      setIsEnhancing(false);
     }
   };
 
@@ -154,7 +170,7 @@ const MediaItemCard: React.FC<MediaItemCardProps> = ({
         </div>
 
         {/* Actions */}
-        {(onEdit || onDelete) && (
+        {(onEdit || onDelete || onEnhance) && (
           <div className="flex gap-2 w-full">
             {onEdit && (
               <Button
@@ -165,6 +181,18 @@ const MediaItemCard: React.FC<MediaItemCardProps> = ({
               >
                 <Edit className="w-3 h-3 mr-1" />
                 Edit
+              </Button>
+            )}
+            {onEnhance && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEnhance}
+                disabled={isEnhancing}
+                className="flex-1 text-blue-600 hover:text-blue-700"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
               </Button>
             )}
             {onDelete && (

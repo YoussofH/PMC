@@ -177,7 +177,139 @@ export const systemAPI = {
   }
 };
 
-// AI features placeholder (for future commits)
+// AI features
+export interface AICategorization {
+  suggested_genre: string;
+  alternative_genres: string[];
+  tags: string[];
+  enhanced_description: string;
+  release_year_estimate?: string;
+  similar_titles: string[];
+  content_rating?: string;
+  metadata: {
+    themes: string[];
+    style: string;
+    target_audience: string;
+  };
+}
+
+export interface AIRecommendation {
+  title: string;
+  creator: string;
+  media_type: string;
+  genre: string;
+  description: string;
+  similarity_score: number;
+  recommendation_reason: string;
+  similar_to: string[];
+}
+
+export interface CollectionInsight {
+  title: string;
+  description: string;
+  type: 'preference' | 'trend' | 'achievement' | 'recommendation';
+  importance: 'high' | 'medium' | 'low';
+}
+
+export interface PersonalityProfile {
+  type: string;
+  description: string;
+  traits: string[];
+}
+
+export interface CollectionHealth {
+  score: number;
+  strengths: string[];
+  suggestions: string[];
+}
+
+export interface SmartSearchResult {
+  interpreted_query: string;
+  suggested_filters: {
+    media_type?: string;
+    status?: string;
+    genre?: string;
+    creator?: string;
+    release_year?: string;
+  };
+  search_strategy: string;
+  explanation: string;
+  alternative_queries: string[];
+}
+
 export const aiAPI = {
-  // Will add AI features in later commits
+  // Get AI categorization suggestions for a media item
+  async categorize(
+    title: string, 
+    creator: string, 
+    media_type: string, 
+    description?: string
+  ): Promise<{ success: boolean; suggestions?: AICategorization; error?: string }> {
+    const params = new URLSearchParams();
+    params.append('title', title);
+    params.append('creator', creator);
+    params.append('media_type', media_type);
+    if (description) params.append('description', description);
+
+    const response = await api.post(`/ai/categorize?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get AI-powered recommendations
+  async getRecommendations(limit: number = 5): Promise<{
+    success: boolean;
+    recommendations?: AIRecommendation[];
+    analysis?: any;
+    error?: string;
+  }> {
+    const response = await api.get(`/ai/recommendations?limit=${limit}`);
+    return response.data;
+  },
+
+  // Get collection insights
+  async getCollectionInsights(): Promise<{
+    success: boolean;
+    insights?: CollectionInsight[];
+    personality_profile?: PersonalityProfile;
+    collection_health?: CollectionHealth;
+    collection_analysis?: any;
+    error?: string;
+  }> {
+    const response = await api.get('/ai/collection-insights');
+    return response.data;
+  },
+
+  // Smart search interpretation
+  async smartSearch(query: string): Promise<{
+    success: boolean;
+    interpreted_query?: string;
+    suggested_filters?: any;
+    search_strategy?: string;
+    explanation?: string;
+    alternative_queries?: string[];
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    params.append('query', query);
+
+    const response = await api.post(`/ai/smart-search?${params.toString()}`);
+    return response.data;
+  },
+
+  // Enhance an existing media item with AI
+  async enhanceItem(itemId: string): Promise<{
+    success: boolean;
+    message?: string;
+    original_item?: MediaItem;
+    updated_item?: MediaItem;
+    ai_suggestions?: AICategorization;
+    applied_updates?: any;
+    error?: string;
+  }> {
+    const params = new URLSearchParams();
+    params.append('item_id', itemId);
+
+    const response = await api.post(`/ai/enhance-item?${params.toString()}`);
+    return response.data;
+  }
 }; 

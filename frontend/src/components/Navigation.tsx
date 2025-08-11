@@ -14,6 +14,7 @@ const Navigation = () => {
     { href: '/library', label: 'Library', active: pathname === '/library' },
     { href: '/add', label: 'Add Media', active: pathname === '/add' },
     { href: '/search', label: 'Search', active: pathname === '/search' },
+    { href: '/ai-insights', label: 'AI Insights', active: pathname === '/ai-insights' },
   ];
 
   return (

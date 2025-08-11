@@ -11,6 +11,7 @@ load_dotenv()
 # Import our models and database
 from models import MediaItem, MediaItemCreate, MediaItemUpdate, MediaType, MediaStatus
 from database import media_db, db
+from ai_service import ai_service
 
 app = FastAPI(title="PMC API", description="Personal Media Collection API", version="1.0.0")
 
@@ -345,6 +346,148 @@ async def get_media_by_status(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve media items by status: {str(e)}")
+
+# AI FEATURES ENDPOINTS
+
+@app.post("/ai/categorize", response_model=dict)
+async def ai_categorize_media(
+    title: str,
+    creator: str,
+    media_type: MediaType,
+    description: str = ""
+):
+    """Use AI to suggest categorization for a media item"""
+    try:
+        result = await ai_service.smart_categorize(
+            title=title,
+            creator=creator, 
+            media_type=media_type.value,
+            description=description
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI categorization failed: {str(e)}")
+
+@app.get("/ai/recommendations", response_model=dict)
+async def get_ai_recommendations(
+    user_id: Optional[str] = Query(None, description="User ID for personalized recommendations"),
+    limit: int = Query(5, ge=1, le=20, description="Number of recommendations")
+):
+    """Get AI-powered personalized recommendations"""
+    try:
+        # Get user's collection
+        items = await media_db.get_all(user_id=user_id or "00000000-0000-0000-0000-000000000001")
+        
+        if not items:
+            return {
+                "success": False,
+                "error": "No items in collection to base recommendations on"
+            }
+        
+        result = await ai_service.get_recommendations(items, limit=limit)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI recommendations failed: {str(e)}")
+
+@app.get("/ai/collection-insights", response_model=dict)
+async def get_collection_insights(
+    user_id: Optional[str] = Query(None, description="User ID for collection analysis")
+):
+    """Get AI-powered insights about the user's collection"""
+    try:
+        # Get user's collection
+        items = await media_db.get_all(user_id=user_id or "00000000-0000-0000-0000-000000000001")
+        
+        if not items:
+            return {
+                "success": False,
+                "error": "No items in collection to analyze"
+            }
+        
+        result = await ai_service.generate_collection_insights(items)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI insights failed: {str(e)}")
+
+@app.post("/ai/smart-search", response_model=dict)
+async def ai_smart_search(
+    query: str,
+    user_id: Optional[str] = Query(None, description="User ID for context")
+):
+    """Use AI to interpret natural language search queries"""
+    try:
+        # Get user's collection for context
+        items = await media_db.get_all(user_id=user_id or "00000000-0000-0000-0000-000000000001")
+        
+        result = await ai_service.smart_search(query, items[:20])  # Sample for context
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI smart search failed: {str(e)}")
+
+@app.post("/ai/enhance-item", response_model=dict)
+async def ai_enhance_media_item(item_id: str):
+    """Use AI to enhance an existing media item with better categorization"""
+    # Validate UUID format
+    if not is_valid_uuid(item_id):
+        raise HTTPException(status_code=404, detail="Media item not found")
+    
+    try:
+        # Get the existing item
+        item = await media_db.get_by_id(item_id)
+        if not item:
+            raise HTTPException(status_code=404, detail="Media item not found")
+        
+        # Get AI suggestions
+        ai_result = await ai_service.smart_categorize(
+            title=item["title"],
+            creator=item["creator"],
+            media_type=item["media_type"],
+            description=item.get("description", "")
+        )
+        
+        if not ai_result["success"]:
+            return ai_result
+        
+        suggestions = ai_result["suggestions"]
+        
+        # Prepare updates (only if current values are empty or generic)
+        updates = {}
+        
+        # Update genre if current is empty or suggestions are better
+        if not item.get("genre") or item.get("genre") in ["General", "Unknown"]:
+            updates["genre"] = suggestions["suggested_genre"]
+        
+        # Update description if current is empty
+        if not item.get("description") and suggestions.get("enhanced_description"):
+            updates["description"] = suggestions["enhanced_description"]
+        
+        # Add metadata if not present
+        if not item.get("metadata") and suggestions.get("metadata"):
+            updates["metadata"] = suggestions["metadata"]
+        
+        # Apply updates if any
+        if updates:
+            updated_item = await media_db.update(item_id, updates)
+            return {
+                "success": True,
+                "message": "Item enhanced with AI suggestions",
+                "original_item": item,
+                "updated_item": updated_item,
+                "ai_suggestions": suggestions,
+                "applied_updates": updates
+            }
+        else:
+            return {
+                "success": True,
+                "message": "No enhancements needed - item already well categorized",
+                "item": item,
+                "ai_suggestions": suggestions
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI enhancement failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

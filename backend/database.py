@@ -3,6 +3,10 @@ from supabase import create_client, Client
 from typing import Optional, List, Dict, Any
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Database:
     def __init__(self):
